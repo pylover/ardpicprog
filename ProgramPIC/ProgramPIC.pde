@@ -33,6 +33,7 @@ typedef uint32_t prog_uint32_t;
 #define PIN_VDD         2       // Controls the power to the PIC
 #define PIN_CLOCK       4       // Clock pin
 #define PIN_DATA        7       // Data pin
+#define PIN_PWM			3		// Step-up dc2dc PWM pin 
 
 #define MCLR_RESET      HIGH    // PIN_MCLR state to reset the PIC
 #define MCLR_VPP        LOW     // PIN_MCLR state to apply 13v to MCLR/VPP pin
@@ -172,10 +173,28 @@ int buflen = 0;
 
 unsigned long lastActive = 0;
 
+int pwm = 1;
+void pwminit() {
+    pinMode(PIN_PWM, OUTPUT);
+    digitalWrite(PIN_PWM, pwm);
+}
+
+void pwmtoggle() {
+	pwm++;
+	if (pwm > 2) {
+		pwm = 0;
+	}
+    digitalWrite(PIN_PWM, pwm == 0? 0: 1);
+}
+
+
 void setup()
 {
     // Need a serial link to the host.
     Serial.begin(9600);
+	
+	// Start the PWM
+	pwminit();
 
     // Hold the PIC in the powered down/reset state until we are ready for it.
     pinMode(PIN_MCLR, OUTPUT);
@@ -226,6 +245,8 @@ void loop()
         if ((millis() - lastActive) >= 2000)
             exitProgramMode();
     }
+
+	pwmtoggle();
 }
 
 void printHex1(unsigned int value)
