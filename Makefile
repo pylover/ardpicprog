@@ -1,15 +1,23 @@
 
-all:
-	(cd host; make all)
+PLATFORM = arduino:avr
+FQBN = $(PLATFORM):uno
+SKETCH = ProgramPIC 
+FLAGS = -v
+PORT = /dev/ttyACM0
 
-win:
-	(cd host; make -f Makefile.win)
+.PHONY: sketch
+sketch:
+	arduino-cli $(FLAGS) compile --fqbn $(FQBN) $(SKETCH)
 
-install:
-	(cd host; make install)
+.PHONY: program
+program:
+	arduino-cli $(FLAGS) upload -p $(PORT) --fqbn $(FQBN) $(SKETCH)
 
-uninstall:
-	(cd host; make uninstall)
+.PHONY: env
+env:
+	arduino-cli core update-index
+	arduino-cli core core install arduino:avr
 
+.PHONY: clean
 clean:
-	(cd host; make clean)
+	arduino-cli cache clean

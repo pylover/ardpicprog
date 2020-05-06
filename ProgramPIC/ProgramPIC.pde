@@ -33,7 +33,8 @@ typedef uint32_t prog_uint32_t;
 #define PIN_VDD         2       // Controls the power to the PIC
 #define PIN_CLOCK       4       // Clock pin
 #define PIN_DATA        7       // Data pin
-#define PIN_PWM			3		// Step-up dc2dc PWM pin 
+#define PIN_PWM			A2		// Step-up dc2dc PWM pin 
+#define PIN_MCLR_LED	A4
 
 #define MCLR_RESET      HIGH    // PIN_MCLR state to reset the PIC
 #define MCLR_VPP        LOW     // PIN_MCLR state to apply 13v to MCLR/VPP pin
@@ -173,7 +174,7 @@ int buflen = 0;
 
 unsigned long lastActive = 0;
 
-int pwm = 1;
+int pwm = 0;
 void pwminit() {
     pinMode(PIN_PWM, OUTPUT);
     digitalWrite(PIN_PWM, pwm);
@@ -181,10 +182,22 @@ void pwminit() {
 
 void pwmtoggle() {
 	pwm++;
-	if (pwm > 2) {
+	if (pwm > 3) {
 		pwm = 0;
 	}
     digitalWrite(PIN_PWM, pwm == 0? 0: 1);
+}
+
+
+void mclrreset() {
+    digitalWrite(PIN_MCLR, MCLR_RESET);
+    digitalWrite(PIN_MCLR_LED, LOW);
+}
+
+
+void mclrvpp() {
+    digitalWrite(PIN_MCLR, MCLR_VPP);
+    digitalWrite(PIN_MCLR_LED, HIGH);
 }
 
 
@@ -198,8 +211,9 @@ void setup()
 
     // Hold the PIC in the powered down/reset state until we are ready for it.
     pinMode(PIN_MCLR, OUTPUT);
+    pinMode(PIN_MCLR_LED, OUTPUT);
     pinMode(PIN_VDD, OUTPUT);
-    digitalWrite(PIN_MCLR, MCLR_RESET);
+	mclrreset();
     digitalWrite(PIN_VDD, LOW);
 
     // Clock and data are floating until the first PIC command.
@@ -1110,7 +1124,7 @@ void enterProgramMode()
 
     // Lower MCLR, VDD, DATA, and CLOCK initially.  This will put the
     // PIC into the powered-off, reset state just in case.
-    digitalWrite(PIN_MCLR, MCLR_RESET);
+	mclrreset();
     digitalWrite(PIN_VDD, LOW);
     digitalWrite(PIN_DATA, LOW);
     digitalWrite(PIN_CLOCK, LOW);
@@ -1123,7 +1137,7 @@ void enterProgramMode()
     pinMode(PIN_CLOCK, OUTPUT);
 
     // Raise MCLR, then VDD.
-    digitalWrite(PIN_MCLR, MCLR_VPP);
+	mclrvpp();
     delayMicroseconds(DELAY_TPPDP);
     digitalWrite(PIN_VDD, HIGH);
     delayMicroseconds(DELAY_THLD0);
@@ -1141,7 +1155,7 @@ void exitProgramMode()
         return;
 
     // Lower MCLR, VDD, DATA, and CLOCK.
-    digitalWrite(PIN_MCLR, MCLR_RESET);
+	mclrreset();
     digitalWrite(PIN_VDD, LOW);
     digitalWrite(PIN_DATA, LOW);
     digitalWrite(PIN_CLOCK, LOW);
